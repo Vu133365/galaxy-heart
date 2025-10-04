@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<title>Galaxy Heart + Contact Panel</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root{
+    --panel-bg: rgba(8,8,16,0.7);
+    --accent: #ff7ab8;
+    --text: #fff;
+  }
+  html,body{ height:100%; margin:0; background:black; font-family: "Segoe UI", Roboto, Arial, sans-serif; }
+  canvas{ display:block; width:100vw; height:100vh; }
+
+  /* Panel */
+  .contact-panel{
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    width: 270px;
+    max-width: calc(100vw - 36px);
+    background: var(--panel-bg);
+    color: var(--text);
+    padding: 10px;
+    height: 230px;
+    overflow-y: auto;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px);
+    z-index: 1000;
+  }
+  .contact-panel header{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:8px;
+  }
+  .panel-title{ font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px; }
+  .panel-actions{ display:flex; gap:6px; align-items:center; }
+  .btn{
+    background:transparent;
+    border:1px solid rgba(255,255,255,0.08);
+    color:var(--text);
+    padding:6px 8px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:13px;
+  }
+  .btn.primary{ background: linear-gradient(90deg,var(--accent),#ffd1e8); color:#000; border:none; }
+  .btn.ghost{ background: transparent; border:1px solid rgba(255,255,255,0.06); }
+  .close-btn{ font-weight:700; padding:6px 8px; border-radius:8px; background:rgba(255,255,255,0.04); }
+
+  .field{ margin:6px 0; display:flex; flex-direction:column; gap:6px; }
+  label{ font-size:12px; color:rgba(255,255,255,0.85); }
+  input[type="text"], textarea{
+    width:100%;
+    padding:8px 10px;
+    border-radius:8px;
+    border:1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.02);
+    color:var(--text);
+    font-size:13px;
+    outline:none;
+  }
+  textarea{ resize:vertical; min-height:48px; max-height:140px; }
+
+  .buttons-row{ display:flex; gap:8px; margin-top:8px; }
+  .preview{
+    margin-top:10px;
+    border-top:1px dashed rgba(255,255,255,0.06);
+    padding-top:10px;
+    font-size:13px;
+  }
+  .preview a{ color: #ffd1e8; text-decoration:none; display:block; margin:4px 0; word-break:break-all; }
+  .small{ font-size:12px; color:rgba(255,255,255,0.65); }
+
+  /* panel toggle */
+  .mini-toggle{
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    z-index: 999;
+    display:none;
+  }
+
+  @media (max-width:520px){
+    .contact-panel{ width: calc(100vw - 28px); left:14px; top:14px; padding:10px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<!-- Contact Panel -->
+<div class="contact-panel" id="contactPanel" role="region" aria-label="Thông tin liên hệ">
+  <header>
+    <div class="panel-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="opacity:0.95"><path d="M12 21s-8-5.33-8-10a5 5 0 0 1 10 0 5 5 0 0 1 10 0c0 4.67-8 10-8 10z" stroke="#ffb6d9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="rgba(255,182,193,0.06)"/></svg>
+      Thẻ Liên hệ
+    </div>
+    <div class="panel-actions">
+      <button class="btn ghost" id="clearBtn" title="Xóa">Xóa</button>
+      <button class="btn primary" id="saveBtn" title="Lưu">Lưu</button>
+    </div>
+  </header>
+
+  <div class="field">
+    <label for="name">Tên</label>
+    <input id="name" type="text" placeholder="Tên của bạn / nickname" />
+  </div>
+
+  <div class="field">
+    <label for="tiktok">TikTok (link)</label>
+    <input id="tiktok" type="text" placeholder="https://www.tiktok.com/@..." />
+  </div>
+
+  <div class="field">
+    <label for="facebook">Facebook (link)</label>
+    <input id="facebook" type="text" placeholder="https://www.facebook.com/..." />
+  </div>
+
+  <div class="field">
+    <label for="instagram">Instagram (link)</label>
+    <input id="instagram" type="text" placeholder="https://www.instagram.com/..." />
+  </div>
+
+  <div class="field">
+    <label for="phone">Số điện thoại</label>
+    <input id="phone" type="text" placeholder="0123 456 789" />
+  </div>
+
+  <div class="field">
+    <label for="bank">Số ngân hàng / Ghi chú ngân hàng</label>
+    <textarea id="bank" placeholder="Ngân hàng - Chi nhánh - Số tài khoản"></textarea>
+  </div>
+
+  <div class="buttons-row">
+    <button class="btn" id="copyBtn" title="Sao chép JSON">Sao chép</button>
+    <button class="btn" id="downloadBtn" title="Tải xuống JSON">Tải xuống</button>
+    <button class="btn" id="hideBtn" title="Đóng bảng">Đóng</button>
+  </div>
+
+  <div class="preview" id="previewArea">
+    <div class="small">Xem trước (nhấn link để mở)</div>
+    <div id="previewContent">
+      <div id="pName"></div>
+      <a id="pTik" href="#" target="_blank" rel="noreferrer"></a>
+      <a id="pFb" href="#" target="_blank" rel="noreferrer"></a>
+      <a id="pIg" href="#" target="_blank" rel="noreferrer"></a>
+      <div id="pPhone"></div>
+      <div id="pBank"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ----------------- Contact Panel logic ----------------- */
+const LS_KEY = "galaxy_contact_card_v1";
+const el = id => document.getElementById(id);
+
+const inputs = {
+  name: el("name"),
+  tiktok: el("tiktok"),
+  facebook: el("facebook"),
+  instagram: el("instagram"),
+  phone: el("phone"),
+  bank: el("bank")
+};
+
+const preview = {
+  pName: el("pName"),
+  pTik: el("pTik"),
+  pFb: el("pFb"),
+  pIg: el("pIg"),
+  pPhone: el("pPhone"),
+  pBank: el("pBank")
+};
+
+function readForm(){
+  return {
+    name: inputs.name.value.trim(),
+    tiktok: inputs.tiktok.value.trim(),
+    facebook: inputs.facebook.value.trim(),
+    instagram: inputs.instagram.value.trim(),
+    phone: inputs.phone.value.trim(),
+    bank: inputs.bank.value.trim()
+  };
+}
+
+function updatePreview(data){
+  preview.pName.textContent = data.name ? data.name : "";
+  preview.pTik.textContent = data.tiktok ? ("TikTok: " + data.tiktok) : "";
+  preview.pTik.href = data.tiktok || "#";
+  preview.pFb.textContent = data.facebook ? ("Facebook: " + data.facebook) : "";
+  preview.pFb.href = data.facebook || "#";
+  preview.pIg.textContent = data.instagram ? ("Instagram: " + data.instagram) : "";
+  preview.pIg.href = data.instagram || "#";
+  preview.pPhone.textContent = data.phone ? ("SĐT: " + data.phone) : "";
+  preview.pBank.textContent = data.bank ? ("Ngân hàng: " + data.bank) : "";
+}
+
+function saveToLocal(){
+  const data = readForm();
+  localStorage.setItem(LS_KEY, JSON.stringify(data));
+  updatePreview(data);
+  flashButton(el("saveBtn"), "Đã lưu");
+}
+
+function loadFromLocal(){
+  const raw = localStorage.getItem(LS_KEY);
+  if(!raw) return null;
+  try{
+    const data = JSON.parse(raw);
+    Object.keys(inputs).forEach(k=>{
+      if(data[k]) inputs[k].value = data[k];
+    });
+    updatePreview(data);
+    return data;
+  }catch(e){ return null; }
+}
+
+function clearForm(){
+  Object.values(inputs).forEach(i=>i.value="");
+  updatePreview({name:"",tiktok:"",facebook:"",instagram:"",phone:"",bank:""});
+  localStorage.removeItem(LS_KEY);
+  flashButton(el("clearBtn"), "Đã xóa");
+}
+
+function copyJSON(){
+  const data = readForm();
+  const text = JSON.stringify(data, null, 2);
+  navigator.clipboard?.writeText(text).then(()=>{
+    flashButton(el("copyBtn"), "Đã sao chép");
+  },()=>{ alert("Không thể sao chép — trình duyệt chặn. Bạn có thể tải file."); });
+}
+
+function downloadJSON(){
+  const data = readForm();
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "contact_card.json"; document.body.appendChild(a);
+  a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+function flashButton(btn, text){
+  const old = btn.textContent;
+  btn.textContent = text;
+  setTimeout(()=>{ btn.textContent = old; }, 1200);
+}
+
+/* events */
+el("saveBtn").addEventListener("click", saveToLocal);
+el("clearBtn").addEventListener("click", clearForm);
+el("copyBtn").addEventListener("click", copyJSON);
+el("downloadBtn").addEventListener("click", downloadJSON);
+el("hideBtn").addEventListener("click", ()=>{ document.getElementById("contactPanel").style.display="none"; });
+
+Object.values(inputs).forEach(i=>{
+  i.addEventListener("input", ()=> updatePreview(readForm()));
+});
+
+/* Bảng màu lõi galaxy */
+const coreColors = {
+  pink:   { inner: "rgba(330,225,211,1.7)", outer: "rgba(300,200,193,0)" },
+  yellow: { inner: "rgba(255,255,200,1)", outer: "rgba(255,255,200,0)" },
+  blue:   { inner: "rgba(180,200,255,1)", outer: "rgba(180,200,255,0)" },
+  purple: { inner: "rgba(220,180,255,1)", outer: "rgba(220,180,255,0)" },
+  white:  { inner: "rgba(255,255,255,1)", outer: "rgba(255,255,255,0)" }
+};
+
+/* chọn màu lõi ở đây */
+let currentCore = coreColors.pink;
+
+
+/* init */
+loadFromLocal();
+
+/* Accessibility: keyboard focus */
+document.addEventListener("keydown", (e)=>{
+  if(e.key === "Escape"){
+    const panel = document.getElementById("contactPanel");
+    if(panel.style.display === "none") panel.style.display = "block";
+    else panel.style.display = "none";
+  }
+});
+
+/* ----------------- Canvas animation (kept from previous I ♥ U file) ----------------- */
+/* Paste the core animation code here (canvas + particles + I ♥ U) */
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+function resizeCanvas(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+
+function random(min,max){ return Math.random()*(max-min)+min; }
+
+// SpiralStar, FallingStar, ShootingStar, FallingHeart, HeartParticle classes
+class SpiralStar {
+  constructor(angle, radius){
+    this.angle = angle; this.radius = radius;
+    this.size = random(0.3,1.0);
+    this.speed = 0.03 + random(0,0.03);
+    this.alpha = random(0.4,1);
+  }
+  draw(cx,cy,time){
+    let x = cx + Math.cos(this.angle + time*this.speed)*this.radius;
+    let y = cy + Math.sin(this.angle + time*this.speed)*this.radius*0.4;
+    ctx.beginPath();
+    ctx.globalAlpha = this.alpha;
+    ctx.fillStyle = "white";
+    ctx.shadowBlur=4; ctx.shadowColor="white";
+    ctx.arc(x,y,this.size,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+  }
+}
+class FallingStar{ constructor(){ this.reset(); } reset(){ this.x=random(0,canvas.width); this.y=random(-canvas.height,0); this.size=random(0.4,1.0); this.speed=random(12,20); this.alpha=random(0.3,1); } update(){ this.y+=this.speed; if(this.y>canvas.height+10)this.reset(); } draw(){ ctx.beginPath(); ctx.globalAlpha=this.alpha; ctx.fillStyle="white"; ctx.shadowBlur=3; ctx.shadowColor="white"; ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0; } }
+class ShootingStar{ constructor(){ this.reset(); } reset(){ this.x=random(-canvas.width,0); this.y=random(50,canvas.height/2); this.length=random(80,150); this.speed=random(80,95); this.angle=random(0.1,0.3); this.alpha=0.5+Math.random()*0.5; } update(){ this.x+=this.speed; this.y+=this.speed*this.angle; this.alpha=1.2+Math.random()*1.2; if(this.x>canvas.width+this.length||this.y>canvas.height)this.reset(); } draw(){ ctx.save(); ctx.globalAlpha=this.alpha; ctx.lineWidth=2; ctx.shadowBlur=15; ctx.shadowColor="white"; let grad=ctx.createLinearGradient(this.x,this.y,this.x-this.length,this.y-this.length*this.angle); grad.addColorStop(0,"white"); grad.addColorStop(1,"rgba(255,255,255,0)"); ctx.strokeStyle=grad; ctx.beginPath(); ctx.moveTo(this.x,this.y); ctx.lineTo(this.x-this.length,this.y-this.length*this.angle); ctx.stroke(); ctx.restore(); } }
+class FallingHeart{ constructor(){ this.reset(); } reset(){ this.x=random(0,canvas.width); this.y=random(-canvas.height,0); this.size=random(2,5); this.speed=random(18,25); this.alpha=random(0.5,1); } update(){ this.y+=this.speed; if(this.y>canvas.height+10)this.reset(); } draw(){ ctx.save(); ctx.globalAlpha=this.alpha; ctx.fillStyle="hotpink"; ctx.shadowBlur=8; ctx.shadowColor="pink"; let x=this.x,y=this.y,s=this.size; ctx.beginPath(); ctx.moveTo(x,y); ctx.bezierCurveTo(x,y-s/2,x-s,y-s/2,x-s,y+s/4); ctx.bezierCurveTo(x-s,y+s*3/4,x,y+s,x,y+s*1.5); ctx.bezierCurveTo(x,y+s,x+s,y+s*3/4,x+s,y+s/4); ctx.bezierCurveTo(x+s,y-s/2,x,y-s/2,x,y); ctx.fill(); ctx.restore(); } }
+class HeartParticle {
+  constructor(cx, cy){
+    this.cx = cx; this.cy = cy;
+    this.size = random(0.5,1.5);
+    this.x = cx + random(-window.innerWidth/2, window.innerWidth/2);
+    this.y = cy + random(-window.innerHeight/2, window.innerHeight/2);
+    this.speed = 0.05 + Math.random()*0.05;
+    this.alpha = random(0.5,1);
+    this.t = random(0, Math.PI*2);
+  }
+  targetHeartPosition(scale=1){
+    let s = scale;
+    let x = 16 * Math.pow(Math.sin(this.t),3);
+    let y = 13 * Math.cos(this.t) - 5*Math.cos(2*this.t) -2*Math.cos(3*this.t) - Math.cos(4*this.t);
+    return [this.cx + x*s, this.cy - y*s];
+  }
+  update(scale){
+    this.t += 0.02;
+    let [tx, ty] = this.targetHeartPosition(scale);
+    this.x += (tx - this.x) * this.speed;
+    this.y += (ty - this.y) * this.speed;
+  }
+  draw(){
+    ctx.beginPath();
+    ctx.globalAlpha = this.alpha;
+    ctx.fillStyle = "hotpink";
+    ctx.shadowBlur = 4; ctx.shadowColor = "pink";
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+  }
+}
+
+class CoreSwirlParticle {
+  constructor(cx, cy) {
+    this.cx = cx; this.cy = cy;
+    this.radius = Math.random() * 80 + 20;  // khoảng cách từ tâm (20–100px)
+    this.angle = Math.random() * Math.PI * 2;
+    this.speed = 0.002 + Math.random() * 0.004;  // tốc độ xoay
+    this.size = Math.random() * 1.5 + 0.5;
+    this.alpha = 0.3 + Math.random() * 0.7;
+    this.color = Math.random() > 0.5
+        ? "rgba(255,200,230,0.8)"
+        : "rgba(255,255,255,0.6)";
+  }
+  update() {
+    this.angle += this.speed;
+  }
+  draw(ctx) {
+    let x = this.cx + Math.cos(this.angle) * this.radius;
+    let y = this.cy + Math.sin(this.angle) * this.radius;
+    ctx.beginPath();
+    ctx.globalAlpha = this.alpha;
+    ctx.fillStyle = this.color;
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = this.color;
+    ctx.arc(x, y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+}
+
+
+/* INIT */
+let cx = canvas.width/2, cy = canvas.height/2 + 150;
+let heartCx = canvas.width/2, heartCy = canvas.height/2 - 100;
+
+let spiralStars = [];
+for(let i=0;i<6000;i++) spiralStars.push(new SpiralStar(random(0,Math.PI*2),random(10, Math.min(cx, cy))));
+
+let heartParticles = [];
+let heartParticleCount = 4500; // nếu muốn dày hơn tăng con số này
+for(let i=0;i<heartParticleCount;i++) heartParticles.push(new HeartParticle(heartCx, heartCy));
+
+let fallingStars=[], shootingStars=[], fallingHearts=[];
+for(let i=0;i<1500;i++) fallingStars.push(new FallingStar());
+for(let i=0;i<10;i++) shootingStars.push(new ShootingStar());
+for(let i=0;i<150;i++) fallingHearts.push(new FallingHeart());
+
+let coreSwirls = [];
+for (let i = 0; i < 120; i++) {
+  coreSwirls.push(new CoreSwirlParticle(cx, cy));
+}
+
+
+/* Orbit images (kept minimal so missing images don't block animation) */
+const imagePaths=[
+  "anh1.jpg","anh2.jpg","anh3.jpg","anh4.jpg","anh5.jpg",
+  "anh6.jpg","anh7.jpg","anh8.jpg","anh9.jpg","anh10.jpg","anh11.jpg"
+];
+const radii=[150,390,180,230,290,80,100,200,270,300,350];
+const sizes=[25,60,35,40,50,30,15,20,35,45,50];
+const angles=[];
+for(let i=0;i<imagePaths.length;i++){
+  angles.push((i / imagePaths.length) * Math.PI * 2);
+}
+let orbitImages=[];
+for(let i=0;i<imagePaths.length;i++){
+  let img=new Image(); img.src=imagePaths[i];
+  orbitImages.push({ img:img, angle:angles[i], radius:radii[i], speed:0.03+Math.random()*0.03, size:sizes[i] });
+}
+
+/* Draw center text I ♥ U */
+let beatTime = 0;
+function drawCenterText(scale){
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  let baseSize = Math.min(120, Math.max(60, Math.min(canvas.width, canvas.height) * 0.06));
+  let fontSize = baseSize * (0.9 + 0.55 * (scale / 15));
+  ctx.font = `bold ${Math.round(fontSize)}px "Segoe UI", Roboto, Arial, sans-serif`;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillStyle = `rgba(255,182,193,${0.28 + 0.4 * Math.sin(beatTime * Math.PI*2)})`;
+  ctx.shadowBlur = 40; ctx.shadowColor = "pink";
+  ctx.fillText("I ♥ U", heartCx, heartCy);
+  ctx.shadowBlur = 12; ctx.shadowColor = "hotpink";
+  ctx.fillStyle = "#fff5f8";
+  ctx.fillText("I ♥ U", heartCx, heartCy);
+  ctx.lineWidth = Math.max(1, Math.round(fontSize * 0.06));
+  ctx.strokeStyle = "rgba(255,0,128,0.12)";
+  ctx.strokeText("I ♥ U", heartCx, heartCy);
+  ctx.restore();
+}
+
+/* ANIMATE */
+function animate(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const time = Date.now()*0.002;
+
+  // Vẽ nền gradient lõi galaxy trước
+  const gradient = ctx.createRadialGradient(cx,cy,10,cx,cy,200);
+  gradient.addColorStop(0, currentCore.inner);
+  gradient.addColorStop(1, currentCore.outer);
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // Vẽ hạt xoáy lõi galaxy (nổi lên trên gradient)
+  coreSwirls.forEach(p => {
+    p.update();
+    p.draw(ctx);
+  });
+
+  // Vẽ các ngôi sao xoắn ốc
+  for(let s of spiralStars) s.draw(cx,cy,time);
+
+  // Nhịp tim
+  beatTime += 0.05;
+  let scale = 15 * (1 + 0.35 * Math.sin(beatTime * Math.PI*2));
+
+  // Hiệu ứng sáng nhịp tim
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  let glowAlpha = 0.2 + 0.5 * Math.sin(beatTime * Math.PI*2);
+  let glowRadius = 50 * scale/15;
+  let glowGrad = ctx.createRadialGradient(heartCx, heartCy, 0, heartCx, heartCy, glowRadius);
+  glowGrad.addColorStop(0, `rgba(255,182,193,${glowAlpha})`);
+  glowGrad.addColorStop(1, 'rgba(255,182,193,0)');
+  ctx.fillStyle = glowGrad;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.restore();
+
+  // Vẽ các hạt tạo hình trái tim
+  for(let p of heartParticles){ p.update(scale); p.draw(); }
+
+  // Vẽ chữ I ♥ U ở trung tâm
+  drawCenterText(scale);
+
+  // Ảnh quay quanh galaxy
+  for(let o of orbitImages){
+    let x = cx + Math.cos(o.angle + time*o.speed)*o.radius;
+    let y = cy + Math.sin(o.angle + time*o.speed)*o.radius*0.4;
+    ctx.save(); ctx.beginPath(); ctx.arc(x,y,o.size/2,0,Math.PI*2); ctx.closePath(); ctx.clip();
+    try{ ctx.drawImage(o.img, x-o.size/2, y-o.size/2, o.size, o.size); }catch(e){}
+    ctx.restore();
+  }
+
+  // Sao băng, sao rơi, tim rơi
+  for(let f of fallingStars){ f.update(); f.draw(); }
+  for(let s of shootingStars){ s.update(); s.draw(); }
+  for(let h of fallingHearts){ h.update(); h.draw(); }
+
+  requestAnimationFrame(animate);
+}
+
+/* image loading guard */
+let loadedCount = 0;
+for(let o of orbitImages){
+  o.img.onload = ()=>{ loadedCount++; if(loadedCount === orbitImages.length) animate(); };
+  o.img.onerror = ()=>{ loadedCount++; if(loadedCount === orbitImages.length) animate(); };
+}
+/* start even if images slow */
+setTimeout(()=>{ if(loadedCount === 0) animate(); }, 400);
+
+window.addEventListener("resize", ()=>{
+  resizeCanvas();
+  cx = canvas.width/2;
+  cy = canvas.height/2 + 150;
+  heartCx = canvas.width/2;
+  heartCy = canvas.height/2 - 100;
+});
+</script>
+</body>
+</html>

@@ -277,6 +277,23 @@ let currentCore = coreColors.pink;
 
 /* init */
 loadFromLocal();
+  // Nếu localStorage chưa có dữ liệu, điền thông tin mặc định
+if(!localStorage.getItem("galaxy_contact_card_v1")) {
+    const defaultData = {
+        name: "Yến Nhi",
+        tiktok: "https://www.tiktok.com/@kphaiyennhi?_t=ZS-90GbGYDqV8i&_r=1",
+        facebook: "https://www.facebook.com/yen.nhi.562025?mibextid=wwXIfr&rdid=Pw7X0mgDBa5EUzwM&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1CGqcsZnHq%2F%3Fmibextid%3DwwXIfr",
+        instagram: "https://www.instagram.com/lt_yennhii/?igsh=MWlwb21waWszOWQzaw%3D%3D",
+        phone: "0985 447 941",
+        bank: "Ngân hàng MB Bank - 0985447941"
+    };
+    // Điền vào các input
+    Object.keys(defaultData).forEach(k => {
+        if(inputs[k]) inputs[k].value = defaultData[k];
+    });
+    // Cập nhật preview
+    updatePreview(defaultData);
+}
 
 /* Accessibility: keyboard focus */
 document.addEventListener("keydown", (e)=>{
@@ -520,4 +537,5 @@ window.addEventListener("resize", ()=>{
 </script>
 </body>
 </html>
+
 

@@ -501,14 +501,10 @@ function animate(){
   // Vẽ chữ I ♥ U ở trung tâm
   drawCenterText(scale);
 
-  // Ảnh quay quanh galaxy
-  for(let o of orbitImages){
-    let x = cx + Math.cos(o.angle + time*o.speed)*o.radius;
-    let y = cy + Math.sin(o.angle + time*o.speed)*o.radius*0.4;
-    ctx.save(); ctx.beginPath(); ctx.arc(x,y,o.size/2,0,Math.PI*2); ctx.closePath(); ctx.clip();
-    try{ ctx.drawImage(o.img, x-o.size/2, y-o.size/2, o.size, o.size); }catch(e){}
-    ctx.restore();
-  }
+  // Ảnh quay quanh galaxy + hiệu ứng sáng lung linh
+for (let o of orbitImages) {
+  let x = cx + Math.cos(o.angle + time * o.speed) * o.radius;
+  let y = cy + Math.sin(o.angle + time * o.speed) * o.radius * 0.4;
 
   // 💡 Hiệu ứng ánh sáng lung linh (glow pulse)
   let glowPulse = 0.5 + 0.5 * Math.sin(time * 1.5 + o.angle * 3); // nhịp sáng lệch nhẹ theo góc
@@ -574,6 +570,7 @@ window.addEventListener("resize", ()=>{
 </script>
 </body>
 </html>
+
 
 
 

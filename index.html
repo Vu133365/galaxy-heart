@@ -426,7 +426,7 @@ const imagePaths=[
   "anh6.jpg","anh7.jpg","anh8.jpg","anh9.jpg","anh10.jpg","anh11.jpg"
 ];
 const radii=[150,130,180,150,155,80,100,170,100,170,190];
-const sizes=[25,35,38,40,36,38,15,20,30,39,40];
+const sizes=[30,25,38,35,36,20,25,35,20,39,40];
 const angles=[];
 for(let i=0;i<imagePaths.length;i++){
   angles.push((i / imagePaths.length) * Math.PI * 2);
@@ -510,6 +510,43 @@ function animate(){
     ctx.restore();
   }
 
+  // 💡 Hiệu ứng ánh sáng lung linh (glow pulse)
+  let glowPulse = 0.5 + 0.5 * Math.sin(time * 1.5 + o.angle * 3); // nhịp sáng lệch nhẹ theo góc
+  let glowSize = o.size * 1.7; // kích thước vùng sáng
+  let glowGrad = ctx.createRadialGradient(x, y, 0, x, y, glowSize);
+  glowGrad.addColorStop(0, `rgba(255,180,255,${0.6 * glowPulse})`);
+  glowGrad.addColorStop(0.5, `rgba(255,130,255,${0.3 * glowPulse})`);
+  glowGrad.addColorStop(1, "rgba(255,100,255,0)");
+
+  // Tạo ánh sáng tỏa ra
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.fillStyle = glowGrad;
+  ctx.beginPath();
+  ctx.arc(x, y, glowSize, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // 🌍 Vẽ ảnh (tròn, có viền sáng)
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x, y, o.size / 2, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.clip();
+
+  try {
+    ctx.drawImage(o.img, x - o.size / 2, y - o.size / 2, o.size, o.size);
+  } catch (e) {}
+
+  // Thêm viền sáng nhỏ quanh ảnh
+  ctx.beginPath();
+  ctx.arc(x, y, o.size / 2 + 2, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(255,200,255,${0.8 * glowPulse})`;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
+}
+
   // Sao băng, sao rơi, tim rơi
   for(let f of fallingStars){ f.update(); f.draw(); }
   for(let s of shootingStars){ s.update(); s.draw(); }
@@ -537,5 +574,6 @@ window.addEventListener("resize", ()=>{
 </script>
 </body>
 </html>
+
 
 
